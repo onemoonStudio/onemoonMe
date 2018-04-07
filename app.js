@@ -5,8 +5,11 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-var index = require('./routes/index');
-var users = require('./routes/users');
+const _db = require("./config")._db;
+const mongoose = require("mongoose");
+
+
+const router = require("./routes/router");
 
 var app = express();
 
@@ -15,15 +18,33 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
 // uncomment after placing your favicon in /public
-//app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', index);
-app.use('/users', users);
+// dataBase connection
+
+const DB_options = {
+  autoIndex: false, // Don't build indexes
+  reconnectTries: Number.MAX_VALUE, // Never stop trying to reconnect
+  reconnectInterval: 500 , // Reconnect every 500ms
+  poolSize: 10 , // Maintain up to 10 socket connections
+  // If not connected, return errors immediately rather than waiting for reconnect
+  bufferMaxEntries: 0,
+  promiseLibrary: require('bluebird')
+}
+mongoose.connect(
+  `mongodb://${_db}@ds159493.mlab.com:59493/onemoonme`
+  , DB_options ).then(
+  () => { console.log('DataBase is connected'); } ,
+  err => { console.error.bind(console,'Check DB - Connection error : '); }
+)
+
+
+app.use('/', router.index)
+  .use('/naver',router.naver);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
